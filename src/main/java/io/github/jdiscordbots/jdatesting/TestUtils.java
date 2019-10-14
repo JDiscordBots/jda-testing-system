@@ -19,6 +19,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
@@ -138,6 +140,32 @@ public abstract class TestUtils {
 	public static String getPrefix() {
 		return props.getProperty("testing-prefix");
 	}
+	
+	public static boolean hasEmbed(Message msg,Predicate<MessageEmbed> tester){
+		for (MessageEmbed embed : msg.getEmbeds()) {
+			if(tester.test(embed)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	public static boolean hasEmbed(Message msg,String title,String description) {
+		return hasEmbed(msg,embed->embed.getTitle().equals(title)&&embed.getDescription().equals(description));
+	}
+	public static boolean hasEmbedField(Message msg,Predicate<Field> tester){
+		return hasEmbed(msg,embed->{
+			for (Field field : embed.getFields()) {
+				if(tester.test(field)) {
+					return true;
+				}
+			}
+			return false;
+		});
+	}
+	public static boolean hasEmbedField(Message msg,String title,String content){
+		return hasEmbedField(msg,field->field.getName().equals(title)&&field.getValue().equals(content));
+	}
+	
 	public static Object invokeNotAccessibleMethod(Class<?> targetClass,String targetMethodName,Class<?>[] paramTypes, Object instanceOfClass, Object... params) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Method method = targetClass.getDeclaredMethod(targetMethodName, paramTypes);
 		AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
