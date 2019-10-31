@@ -26,7 +26,7 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.internal.entities.SelfUserImpl;
 
-public abstract class TestUtils {
+public final class TestUtils {
 	
 	private static JDA jda=null;
 	private static Properties props=new Properties();
