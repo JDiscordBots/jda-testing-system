@@ -15,6 +15,7 @@ import java.security.PrivilegedAction;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Predicate;
 
@@ -308,7 +309,7 @@ public final class TestUtils {
 	 * @return<code>true</code> if the message contains an embed with the title and description, else <code>false</code>
 	 */
 	public static boolean hasEmbed(Message msg,String title,String description) {
-		return hasEmbed(msg,embed->embed.getTitle().equals(title)&&embed.getDescription().equals(description));
+		return hasEmbed(msg,embed->Objects.equals(embed.getTitle(),title)&&Objects.equals(embed.getDescription(),description));
 	}
 	/**
 	 * tests if an embed contains a field that fulfills a certain criteria
