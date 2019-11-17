@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -21,6 +22,7 @@ import java.util.function.Predicate;
 
 import org.awaitility.Awaitility;
 import org.awaitility.Durations;
+import org.awaitility.core.ConditionTimeoutException;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -50,6 +52,7 @@ public final class TestUtils {
 	private static JDA jda=null;
 	private static Properties props=new Properties();
 	private static OffsetDateTime start=Instant.now().atOffset(ZoneOffset.UTC);
+	private static Duration timeout=Durations.FIVE_SECONDS;
 	
 	static{
 		try {
@@ -100,6 +103,37 @@ public final class TestUtils {
 	private TestUtils() {
 		//prevent instantiation
 	}
+	/**
+	 * gets maximum the timeout that is used when waiting for a message
+	 * @return the timeout
+	 * @see TestUtils#getMessage()
+	 * @see TestUtils#getMessage(Member)
+	 * @see TestUtils#getMessage(Predicate)
+	 * @see TestUtils#getMessage(String)
+	 * @see TestUtils#getMessage(TextChannel)
+	 * @see TestUtils#getMessage(TextChannel, Member)
+	 * @see TestUtils#getMessage(TextChannel, Predicate)
+	 * @see TestUtils#getMessage(TextChannel, String)
+	 */
+	public static Duration getTimeout() {
+		return timeout;
+	}
+	/**
+	 * sets the maximum timeout that is used when waiting for a message
+	 * @param timeout the timeout
+	 * @see TestUtils#getMessage()
+	 * @see TestUtils#getMessage(Member)
+	 * @see TestUtils#getMessage(Predicate)
+	 * @see TestUtils#getMessage(String)
+	 * @see TestUtils#getMessage(TextChannel)
+	 * @see TestUtils#getMessage(TextChannel, Member)
+	 * @see TestUtils#getMessage(TextChannel, Predicate)
+	 * @see TestUtils#getMessage(TextChannel, String)
+	 */
+	public static void setTimeout(Duration timeout) {
+		TestUtils.timeout = timeout;
+	}
+	
 	private static boolean isMessageSentDuringTest(Message msg) {
 		return msg.getTimeCreated().isAfter(start);
 	}
@@ -168,6 +202,8 @@ public final class TestUtils {
 	 * @param tc the {@link TextChannel}
 	 * @param s the String
 	 * @return the {@link Message}
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(TextChannel tc,String s) {
 		return getMessage(tc,msg->msg.getContentRaw().equals(s));
@@ -177,6 +213,8 @@ public final class TestUtils {
 	 * @param s the String
 	 * @return the {@link Message}
 	 * @see TestUtils#getTestingChannel()
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(String s) {
 		return getMessage(getTestingChannel(),msg->msg.getContentRaw().equals(s));
@@ -185,18 +223,26 @@ public final class TestUtils {
 	 * gets a {@link Message} in a {@link TextChannel} that fulfills certain criteria that may not be already sent(and received) but was/will be sent during the tests
 	 * @param tc the {@link TextChannel}
 	 * @param tester a function that returns <code>true</code> if a message is the correct message
-	 * @return the {@link Message}
+	 * @return the {@link Message} or <code>null</code> if the message was not found until the time expires
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(TextChannel tc,Predicate<Message> tester) {
 		Wrapper<Message> msg=new Wrapper<>();
-		Awaitility.await().atMost(Durations.FIVE_SECONDS).until(()->(msg.data=getAlreadySentMessage(tc,tester))!=null);
-		return msg.data;
+		try{
+			Awaitility.await().atMost(timeout).until(()->(msg.data=getAlreadySentMessage(tc,tester))!=null);
+			return msg.data;
+		}catch(ConditionTimeoutException e) {//timeout
+			return null;
+		}
 	}
 	/**
 	 * gets a {@link Message} in the testing channel that fulfills certain criteria that may not be already sent(and received) but was/will be sent during the tests
 	 * @param tester a function that returns <code>true</code> if a message is the correct message
 	 * @return the {@link Message}
 	 * @see TestUtils#getTestingChannel()
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(Predicate<Message> tester) {
 		return getMessage(getTestingChannel(),tester);
@@ -206,6 +252,8 @@ public final class TestUtils {
 	 * @param tc the {@link TextChannel}
 	 * @param member the user
 	 * @return the {@link Message}
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(TextChannel tc,Member member) {
 		return getMessage(tc, msg->msg.getMember().equals(member));
@@ -215,6 +263,8 @@ public final class TestUtils {
 	 * @param member the user
 	 * @return the {@link Message}
 	 * @see TestUtils#getTestingChannel()
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(Member member) {
 		return getMessage(getTestingChannel(), member);
@@ -223,6 +273,8 @@ public final class TestUtils {
 	 * gets a {@link Message} in a {@link TextChannel} that may not be already sent(and received) but was/will be sent during the tests
 	 * @param tc the {@link TextChannel}
 	 * @return the {@link Message}
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(TextChannel tc) {
 		return getMessage(tc, msg->true);
@@ -232,6 +284,8 @@ public final class TestUtils {
 	 * @param tc the {@link TextChannel}
 	 * @return the {@link Message}
 	 * @see TestUtils#getTestingChannel()
+	 * @see TestUtils#getTimeout()
+	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage() {
 		return getMessage(getTestingChannel(), msg->true);
