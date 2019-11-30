@@ -16,8 +16,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 import org.awaitility.Awaitility;
@@ -80,11 +83,12 @@ public final class TestUtils {
 				public void checkExit(int status) {
 					super.checkExit(status);
 					boolean goOn=true;
+					List<Message> messages=new ArrayList<>();
 					while(goOn) {
 						for(Message msg:getTestingChannel().getHistory().retrievePast(100).complete()) {
 							if(isMessageSentDuringTest(msg)) {
 								if(msg.getAuthor().equals(jda.getSelfUser())) {
-									msg.delete().complete();
+									messages.add(msg);
 								}
 							}else {
 								goOn=false;
@@ -92,6 +96,8 @@ public final class TestUtils {
 							}
 						}
 					}
+					List<CompletableFuture<Void>> del = getTestingChannel().purgeMessages(messages);
+					CompletableFuture.allOf(del.toArray(new CompletableFuture[del.size()]));
 					jda.shutdown();
 				}
 			});
