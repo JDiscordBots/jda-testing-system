@@ -287,7 +287,6 @@ public final class TestUtils {
 	}
 	/**
 	 * gets a {@link Message} in the testing channel that may not be already sent(and received) but was/will be sent during the tests
-	 * @param tc the {@link TextChannel}
 	 * @return the {@link Message}
 	 * @see TestUtils#getTestingChannel()
 	 * @see TestUtils#getTimeout()
@@ -307,7 +306,6 @@ public final class TestUtils {
 	/**
 	 * sends a message in the testing channel and waits until it has been sent
 	 * @param message the content of the message
-	 * @param tc the {@link TextChannel} where the message should be sent
 	 * @see TestUtils#getTestingChannel()
 	 */
 	public static void sendMessage(String message) {
@@ -366,7 +364,7 @@ public final class TestUtils {
 	 * @param msg the {@link Message}
 	 * @param title the specified title
 	 * @param description the specified description
-	 * @return<code>true</code> if the message contains an embed with the title and description, else <code>false</code>
+	 * @return <code>true</code> if the message contains an embed with the title and description, else <code>false</code>
 	 */
 	public static boolean hasEmbed(Message msg,String title,String description) {
 		return hasEmbed(msg,embed->Objects.equals(embed.getTitle(),title)&&Objects.equals(embed.getDescription(),description));
