@@ -71,13 +71,6 @@
 			<version>0.9.11</version>
 			<scope>compile</scope>
 		</dependency>
-		<!-- Unit Tests -->
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<version>5.4.0</version>
-			<scope>compile</scope>
-		</dependency>
 		<!-- wait -->
 		<dependency>
 			<groupId>org.awaitility</groupId>
