@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 import org.awaitility.Awaitility;
@@ -82,22 +82,23 @@ public final class TestUtils {
 				@Override
 				public void checkExit(int status) {
 					super.checkExit(status);
-					boolean goOn=true;
 					List<Message> messages=new ArrayList<>();
-					while(goOn) {
-						for(Message msg:getTestingChannel().getHistory().retrievePast(100).complete()) {
+					try {
+						getTestingChannel().getIterableHistory().cache(false).forEachAsync(msg->{
 							if(isMessageSentDuringTest(msg)) {
 								if(msg.getAuthor().equals(jda.getSelfUser())) {
 									messages.add(msg);
 								}
+								return true;
 							}else {
-								goOn=false;
-								break;
+								return false;
 							}
-						}
+						}).get();
+					} catch (InterruptedException | ExecutionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					List<CompletableFuture<Void>> del = getTestingChannel().purgeMessages(messages);
-					CompletableFuture.allOf(del.toArray(new CompletableFuture[del.size()]));
+					getTestingChannel().purgeMessages(messages);
 					jda.shutdown();
 				}
 			});
