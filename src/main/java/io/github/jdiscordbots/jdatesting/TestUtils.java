@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.awaitility.Awaitility;
@@ -56,6 +56,7 @@ public final class TestUtils {
 	private static Properties props=new Properties();
 	private static OffsetDateTime start=Instant.now().atOffset(ZoneOffset.UTC);
 	private static Duration timeout=Durations.FIVE_SECONDS;
+	private static Consumer<String> logger=null;
 	
 	static{
 		try {
@@ -83,20 +84,14 @@ public final class TestUtils {
 				public void checkExit(int status) {
 					super.checkExit(status);
 					List<Message> messages=new ArrayList<>();
-					try {
-						getTestingChannel().getIterableHistory().cache(false).forEachAsync(msg->{
-							if(isMessageSentDuringTest(msg)) {
-								if(msg.getAuthor().equals(jda.getSelfUser())) {
-									messages.add(msg);
-								}
-								return true;
-							}else {
-								return false;
+					for(Message msg:getTestingChannel().getIterableHistory().cache(true)){
+						if(isMessageSentDuringTest(msg)) {
+							if(msg.getAuthor().equals(jda.getSelfUser())) {
+								messages.add(msg);
 							}
-						}).get();
-					} catch (InterruptedException | ExecutionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						}else {
+							break;
+						}
 					}
 					getTestingChannel().purgeMessages(messages);
 					jda.shutdown();
@@ -183,6 +178,38 @@ public final class TestUtils {
 	public static User getUser(String id) {
 		return jda.getUserById(id);
 	}
+	private static void log(Message msg) {
+		StringBuilder sb=new StringBuilder("Testing message: ");
+		if(!"".equals(msg.getContentRaw())) {
+			if(!msg.getEmbeds().isEmpty()) {
+				sb.append('\"');
+			}
+			sb.append(msg.getContentRaw());
+			if(!msg.getEmbeds().isEmpty()) {
+				sb.append('\"');
+			}
+		}
+		for (MessageEmbed embed : msg.getEmbeds()) {
+			if(embed.getTitle()!=null) {
+				sb.append("title=\"");
+				sb.append(embed.getTitle());
+				sb.append('\"');
+			}
+			if(embed.getDescription()!=null) {
+				sb.append("desc=\"");
+				sb.append(embed.getDescription());
+				sb.append('\"');
+			}
+			for (Field field : embed.getFields()) {
+				sb.append("field{\"");
+				sb.append(field.getName());
+				sb.append("\"/\"");
+				sb.append(field.getValue());
+				sb.append("\"}");
+			}
+		}
+		logger.accept(sb.toString());
+	}
 	/**
 	 * gets a {@link Message} that fulfills certain criteria has already been sent but was sent during the tests
 	 * @param tc the {@link TextChannel} where the message was sent
@@ -191,9 +218,11 @@ public final class TestUtils {
 	 */
 	public static Message getAlreadySentMessage(TextChannel tc,Predicate<Message> tester) {
 		for (Message msg : tc.getHistory().retrievePast(100).complete()) {
-			
 			if(!isMessageSentDuringTest(msg)) {
 				return null;
+			}
+			if(logger!=null) {
+				log(msg);
 			}
 			if (tester.test(msg)) {
 				return msg;
@@ -432,5 +461,8 @@ public final class TestUtils {
 			return null;
 		});
 		return method.invoke(instanceOfClass, params);
+	}
+	public static void setLogger(Consumer<String> logger) {
+		TestUtils.logger = logger;
 	}
 }
