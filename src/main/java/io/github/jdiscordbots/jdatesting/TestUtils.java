@@ -10,14 +10,17 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -66,39 +69,33 @@ public final class TestUtils {
 			Class<?> factoryClass = Class.forName(jdaGetterClassName);
 			Method factoryMethod = factoryClass.getMethod(jdaGetterMethodName);
 			jda = (JDA) factoryMethod.invoke(null);
-			SecurityManager oldSecManager=System.getSecurityManager();
-			System.setSecurityManager(new SecurityManager() {
-				@Override
-				public void checkPermission(Permission perm) {
-					if(oldSecManager!=null) {
-						oldSecManager.checkPermission(perm);
-					}
-				}
-				@Override
-				public void checkPermission(Permission perm, Object context) {
-					if(oldSecManager!=null) {
-						oldSecManager.checkPermission(perm,context);
-					}
-				}
-				@Override
-				public void checkExit(int status) {
-					super.checkExit(status);
-					List<Message> messages=new ArrayList<>();
-					for(Message msg:getTestingChannel().getIterableHistory().cache(true)){
-						if(isMessageSentDuringTest(msg)) {
-							if(msg.getAuthor().equals(jda.getSelfUser())) {
-								messages.add(msg);
-							}
-						}else {
-							break;
+			
+			Class<?> hooksClass=Class.forName("java.lang.ApplicationShutdownHooks");
+			java.lang.reflect.Field hooksField = hooksClass.getDeclaredField("hooks");
+			AccessController.doPrivileged((PrivilegedAction<Void>)()->{hooksField.setAccessible(true);return null;});
+			@SuppressWarnings("unchecked")
+			Map<Thread, Thread> hookMap = (Map<Thread, Thread>) hooksField.get(null);
+			Collection<Thread> hooks = new HashSet<>(hookMap.values());
+			hookMap.clear();
+			Runtime.getRuntime().addShutdownHook(new Thread(()->{
+				List<Message> messages=new ArrayList<>();
+				for(Message msg:getTestingChannel().getIterableHistory().cache(true)){
+					if(isMessageSentDuringTest(msg)) {
+						if(msg.getAuthor().equals(jda.getSelfUser())) {
+							messages.add(msg);
 						}
+					}else {
+						break;
 					}
-					getTestingChannel().purgeMessages(messages);
-					jda.shutdown();
 				}
-			});
+				getTestingChannel().purgeMessages(messages);
+				jda.shutdown();
+				for (Thread hook : hooks) {
+					hook.start();
+				}
+			}));
 			((SelfUserImpl)jda.getSelfUser()).setBot(false);
-		} catch (IOException | ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (IOException | ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		}
 	}
