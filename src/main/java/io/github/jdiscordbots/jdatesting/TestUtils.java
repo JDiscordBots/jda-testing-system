@@ -11,13 +11,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +53,7 @@ import net.dv8tion.jda.internal.entities.SelfUserImpl;
  * 	<li><i>testing-prefix</i> the command-prefix of the bot to test</li>
  * </ul>
  */
+@SuppressWarnings("unchecked")
 public final class TestUtils {
 	
 	private static JDA jda=null;
@@ -60,6 +61,7 @@ public final class TestUtils {
 	private static OffsetDateTime start=Instant.now().atOffset(ZoneOffset.UTC);
 	private static Duration timeout=Durations.FIVE_SECONDS;
 	private static Consumer<String> logger=null;
+	private static int numOfMessagesToCheck=100;
 	
 	static{
 		try {
@@ -72,9 +74,17 @@ public final class TestUtils {
 			
 			Class<?> hooksClass=Class.forName("java.lang.ApplicationShutdownHooks");
 			java.lang.reflect.Field hooksField = hooksClass.getDeclaredField("hooks");
-			AccessController.doPrivileged((PrivilegedAction<Void>)()->{hooksField.setAccessible(true);return null;});
-			@SuppressWarnings("unchecked")
-			Map<Thread, Thread> hookMap = (Map<Thread, Thread>) hooksField.get(null);
+			Map<Thread, Thread> hookMap;
+			try {
+				AccessController.doPrivileged((PrivilegedAction<Void>)()->{hooksField.setAccessible(true);return null;});
+				hookMap = (Map<Thread, Thread>) hooksField.get(null);
+			}catch(RuntimeException e) {
+				if("java.lang.reflect.InaccessibleObjectException".equals(e.getClass().getCanonicalName())){
+					hookMap=new HashMap<>();
+				}else {
+					throw e;
+				}
+			}
 			Collection<Thread> hooks = new HashSet<>(hookMap.values());
 			hookMap.clear();
 			Runtime.getRuntime().addShutdownHook(new Thread(()->{
@@ -214,7 +224,7 @@ public final class TestUtils {
 	 * @return the {@link Message} Object or null if it hasn't been sent
 	 */
 	public static Message getAlreadySentMessage(TextChannel tc,Predicate<Message> tester) {
-		for (Message msg : tc.getHistory().retrievePast(100).complete()) {
+		for (Message msg : tc.getHistory().retrievePast(numOfMessagesToCheck).complete()) {
 			if(!isMessageSentDuringTest(msg)) {
 				return null;
 			}
@@ -459,6 +469,36 @@ public final class TestUtils {
 		});
 		return method.invoke(instanceOfClass, params);
 	}
+	/**
+	 * sets the number of messages to test when searching for a message
+	 * @param numOfMessagesToCheck the new number of messages to check
+	 * @see TestUtils#getAlreadySentMessage(TextChannel, Predicate)
+	 * @see TestUtils#getMessage()
+	 * @see TestUtils#getMessage(Member)
+	 * @see TestUtils#getMessage(String)
+	 * @see TestUtils#getMessage(Predicate)
+	 * @see TestUtils#getMessage(Member)
+	 */
+	public static void setNumOfMessagesToCheck(int numOfMessagesToCheck) {
+		TestUtils.numOfMessagesToCheck = numOfMessagesToCheck;
+	}
+	/**
+	 * gets the number of messages to test when searching for a message
+	 * @return the new number of messages to check
+	 * @see TestUtils#getAlreadySentMessage(TextChannel, Predicate)
+	 * @see TestUtils#getMessage()
+	 * @see TestUtils#getMessage(Member)
+	 * @see TestUtils#getMessage(String)
+	 * @see TestUtils#getMessage(Predicate)
+	 * @see TestUtils#getMessage(Member)
+	 */
+	public static int getNumOfMessagesToCheck() {
+		return numOfMessagesToCheck;
+	}
+	/**
+	 * sets the Logger where all messages that are tested will be logged to
+	 * @param logger a logger that accepts the logged String
+	 */
 	public static void setLogger(Consumer<String> logger) {
 		TestUtils.logger = logger;
 	}
