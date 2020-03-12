@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.jdiscordbots</groupId>
 	<artifactId>jda-testing-system</artifactId>
-	<version>0.0.11-SNAPSHOT</version>
+	<version>0.0.12-SNAPSHOT</version>
 	<name>JDA Testing Framework</name>
 	<description>Feature test library for JDA Discord Bots</description>
 	<url>https://github.com/JDiscordBots/jda-testing-system</url>

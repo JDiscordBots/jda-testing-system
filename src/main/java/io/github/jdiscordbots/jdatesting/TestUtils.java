@@ -19,10 +19,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -62,6 +64,8 @@ public final class TestUtils {
 	private static Duration timeout=Durations.FIVE_SECONDS;
 	private static Consumer<String> logger=null;
 	private static int numOfMessagesToCheck=100;
+	private static int numOfMessagesForAutoDelete=-1;
+	private static Queue<Message> toDelete=new LinkedList<>();
 	
 	static{
 		try {
@@ -338,7 +342,13 @@ public final class TestUtils {
 	 * @param tc the {@link TextChannel} where the message should be sent
 	 */
 	public static void sendMessage(String message,TextChannel tc) {
-		tc.sendMessage(message).complete();
+		Message msg=tc.sendMessage(message).complete();
+		if(numOfMessagesForAutoDelete>0) {
+			toDelete.offer(msg);
+			if(numOfMessagesForAutoDelete<=toDelete.size()) {
+				toDelete.poll().delete().queue();
+			}
+		}
 	}
 	/**
 	 * sends a message in the testing channel and waits until it has been sent
@@ -496,10 +506,35 @@ public final class TestUtils {
 		return numOfMessagesToCheck;
 	}
 	/**
+	 * gets the number of messages that need to be sent until the first message is deleted<br>
+	 * If n messages are sent by using {@link TestUtils}, the first message will be automatically deleted.
+	 * @return the number of messages for deletion (n)
+	 * @see TestUtils#sendMessage(String)
+	 * @see TestUtils#sendMessage(String, TextChannel)
+	 * @see TestUtils#sendCommand(String)
+	 * @see TestUtils#sendCommand(String, TextChannel)
+	 */
+	public static int getNumOfMessagesForAutoDelete() {
+		return numOfMessagesForAutoDelete;
+	}
+	/**
+	 * sets the number of messages that need to be sent until the first message is deleted<br>
+	 * If n messages are sent by using {@link TestUtils}, the first message will be automatically deleted.
+	 * @param numOfMessagesForAutoDelete the number of messages for deletion (n)
+	 * @see TestUtils#sendMessage(String)
+	 * @see TestUtils#sendMessage(String, TextChannel)
+	 * @see TestUtils#sendCommand(String)
+	 * @see TestUtils#sendCommand(String, TextChannel)
+	 */
+	public static void setNumOfMessagesForAutoDelete(int numOfMessagesForAutoDelete) {
+		TestUtils.numOfMessagesForAutoDelete = numOfMessagesForAutoDelete;
+	}
+	/**
 	 * sets the Logger where all messages that are tested will be logged to
 	 * @param logger a logger that accepts the logged String
 	 */
 	public static void setLogger(Consumer<String> logger) {
 		TestUtils.logger = logger;
 	}
+	
 }
