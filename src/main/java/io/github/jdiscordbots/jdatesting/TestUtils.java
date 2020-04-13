@@ -38,6 +38,8 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
+import net.dv8tion.jda.api.events.ReconnectedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
@@ -109,6 +111,12 @@ public final class TestUtils {
 				}
 			}));
 			((SelfUserImpl)jda.getSelfUser()).setBot(false);
+			jda.addEventListener(new ListenerAdapter() {
+				@Override
+				public void onReconnect(ReconnectedEvent event) {
+					((SelfUserImpl)jda.getSelfUser()).setBot(false);
+				}
+			});
 		} catch (IOException | ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		}

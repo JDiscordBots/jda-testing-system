@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.jdiscordbots</groupId>
 	<artifactId>jda-testing-system</artifactId>
-	<version>0.0.12-SNAPSHOT</version>
+	<version>0.0.13-SNAPSHOT</version>
 	<name>JDA Testing Framework</name>
 	<description>Feature test library for JDA Discord Bots</description>
 	<url>https://github.com/JDiscordBots/jda-testing-system</url>
@@ -62,8 +62,9 @@
 		<dependency>
 			<groupId>net.dv8tion</groupId>
 			<artifactId>JDA</artifactId>
-			<version>4.1.0_81</version>
+			<version>4.1.1_133</version>
 			<scope>provided</scope>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.reflections</groupId>
