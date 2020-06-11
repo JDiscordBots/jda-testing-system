@@ -193,6 +193,19 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.jasig.maven</groupId>
+				<artifactId>maven-notice-plugin</artifactId>
+				<version>1.0.6</version>
+				<configuration>
+					<noticeTemplate>https://jdiscordbots.github.io/util/data/notice/jda-testing-system.template</noticeTemplate>
+					<licenseMapping>
+						<param>https://jdiscordbots.github.io/util/data/notice/license-mappings.xml</param>
+					</licenseMapping>
+					<generateChildNotices>true</generateChildNotices>
+					<fileName>NOTICE.md</fileName>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<profiles>

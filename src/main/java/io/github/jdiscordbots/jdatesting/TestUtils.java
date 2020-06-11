@@ -311,7 +311,7 @@ public final class TestUtils {
 	 * @see TestUtils#setTimeout(Duration)
 	 */
 	public static Message getMessage(TextChannel tc,Member member) {
-		return getMessage(tc, msg->msg.getMember().equals(member));
+		return getMessage(tc, msg->Objects.equals(msg.getMember(),member));
 	}
 	/**
 	 * gets a {@link Message} in the testing channel was sent by a certain user that may not be already sent(and received) but was/will be sent during the tests
@@ -446,7 +446,7 @@ public final class TestUtils {
 	 * @return <code>true</code> if the embed contains such a field, else <code>false</code>
 	 */
 	public static boolean hasEmbedField(MessageEmbed embed,String title,String content){
-		return hasEmbedField(embed,field->field.getName().equals(title)&&field.getValue().equals(content));
+		return hasEmbedField(embed,field->Objects.equals(field.getName(),title)&&Objects.equals(field.getValue(),content));
 	}
 	/**
 	 * tests if a message contains an embed with a field that fulfills a certain criteria
@@ -465,7 +465,7 @@ public final class TestUtils {
 	 * @return <code>true</code> if the message contains such an embed, else <code>false</code>
 	 */
 	public static boolean hasEmbedField(Message msg,String title,String content){
-		return hasEmbedField(msg,field->field.getName().equals(title)&&field.getValue().equals(content));
+		return hasEmbedField(msg,field->Objects.equals(field.getName(), title)&&Objects.equals(field.getValue(), content));
 	}
 	/**
 	 * invokes a method that is private using reflection
